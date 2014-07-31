@@ -93,6 +93,7 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
             if (result_code >= 5) {
                 var canvas = new PuzzleCanvas($content.find(".explanation")[0]);
                 canvas.prepare(checkioInput);
+                canvas.run(userResult);
             }
 
 
@@ -172,14 +173,18 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
             var attrBord = {"stroke": colorBlue4, "stroke-width": 3};
 
 
-            var marbleColors = [colorGrey3, ]
+            var marbleColors = [colorGrey3, colorBlue1, "#66CC66", "#FF6666", colorOrange1];
+
+            var holes = paper.set();
+
+            var rings = paper.set();
 
             this.prepare = function (state) {
                 for (var i = 1; i < 5; i++) {
                     paper.circle(ringsCentres[i][0], ringsCentres[i][1], innerRing).attr(
                         {"stroke": colorBlue4, "stroke-width": 3});
-                    paper.circle(ringsCentres[i][0], ringsCentres[i][1], outerRing).attr(
-                        {"stroke": colorBlue4, "stroke-width": 3});
+                    rings.push(paper.circle(ringsCentres[i][0], ringsCentres[i][1], outerRing).attr(
+                        {"stroke": colorBlue4, "stroke-width": 3}));
                 }
                 for (i = 1; i < 5; i++) {
                     paper.circle(ringsCentres[i][0], ringsCentres[i][1], innerRing + marble).attr(
@@ -198,16 +203,50 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
                         ["A", outerRing, outerRing, 0, 0, 1, dots[1].x, dots[1].y],
                         ["A", outerRing, outerRing, 0, 0, 1, dots[0].x, dots[0].y],
                         ["Z"]]).attr(attrBord));
+                    hole.push(paper.circle(size / 2, pad + outerRing, marble).attr(
+                        {"stroke": colorBlue4, "stroke-width": 2, "fill": marbleColors[state[i]]}));
                     hole.transform(positionsAct[i]);
+                    holes.push(hole);
                 }
 
+            };
 
-//                paper.path([["M", ringsCentres[1][0], pad],
-//                ["A", outerRingD / 2, outerRingD / 2, 0, 1, 1, ringsCentres[1][0] - 0.1, pad],
-//                ["z"], ["M", ringsCentres[1][0], ringsCentres[1][1] - innerRingD / 2],
-//                ["A", innerRingD / 2, innerRingD / 2, 0, 1, 1, ringsCentres[1][0] - 0.1, ringsCentres[1][1] - innerRingD / 2],
-//                ["z"]]).attr(attrRing);
-//                paper.circle(ringsCentres[1][0], ringsCentres[1][1] - innerRingD, 5);
+            this.run = function(actions) {
+                var i = 0;
+                var ringsPositions = {
+                    1: [0, 3, 5, 2],
+                    2: [1, 4, 6, 3],
+                    3: [5, 8, 10, 7],
+                    4: [6, 9, 11, 8]
+                };
+
+
+                function rotate() {
+
+                    if (i >= actions.length) {
+                        return false;
+                    }
+                    var act = Number(actions[i]);
+                    i++;
+                    var wheel = paper.set();
+                    var temp = holes[ringsPositions[act][0]];
+                    for (var k = 0; k < 4; k++) {
+                        wheel.push(temp);
+                        var new_temp = holes[ringsPositions[act][(k+1)%4]];
+                        holes[ringsPositions[act][(k+1)%4]] = temp;
+                        temp = new_temp;
+                    }
+                    setTimeout(function() {
+                        rings[act-1].toFront();
+                        wheel.animate({"transform": "...R90," + ringsCentres[act][0] + "," + ringsCentres[act][1]},
+                            1000, callback=function(){
+                                rings[act-1].toBack();
+                                rotate();
+                            })}, 100);
+
+                }
+
+                setTimeout(rotate, 500);
             }
 
         }
