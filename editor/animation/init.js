@@ -43,9 +43,9 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
             var fname = 'puzzle88';
 
             var checkioInput = data.in || [0, 4, 3, 1, 0, 1, 4, 2, 3, 0, 2, 0];
-            var checkioInputStr = fname + '(' + checkioInput.join(", ")  + ')';
+            var checkioInputStr = fname + '(' + checkioInput.join(", ") + ')';
 
-            var failError = function(dError) {
+            var failError = function (dError) {
                 $content.find('.call').html('Fail: ' + checkioInputStr);
                 $content.find('.output').html(dError.replace(/\n/g, ","));
 
@@ -91,7 +91,8 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
             }
 
             if (result_code >= 5) {
-
+                var canvas = new PuzzleCanvas($content.find(".explanation")[0]);
+                canvas.prepare(checkioInput);
             }
 
 
@@ -113,27 +114,103 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
 //            });
 //        });
 
-        var colorOrange4 = "#F0801A";
-        var colorOrange3 = "#FA8F00";
-        var colorOrange2 = "#FAA600";
-        var colorOrange1 = "#FABA00";
 
-        var colorBlue4 = "#294270";
-        var colorBlue3 = "#006CA9";
-        var colorBlue2 = "#65A1CF";
-        var colorBlue1 = "#8FC7ED";
+        function PuzzleCanvas(dom) {
+            var colorOrange4 = "#F0801A";
+            var colorOrange3 = "#FA8F00";
+            var colorOrange2 = "#FAA600";
+            var colorOrange1 = "#FABA00";
 
-        var colorGrey4 = "#737370";
-        var colorGrey3 = "#9D9E9E";
-        var colorGrey2 = "#C5C6C6";
-        var colorGrey1 = "#EBEDED";
+            var colorBlue4 = "#294270";
+            var colorBlue3 = "#006CA9";
+            var colorBlue2 = "#65A1CF";
+            var colorBlue1 = "#8FC7ED";
 
-        var colorWhite = "#FFFFFF";
-        //Your Additional functions or objects inside scope
-        //
-        //
-        //
+            var colorGrey4 = "#737370";
+            var colorGrey3 = "#9D9E9E";
+            var colorGrey2 = "#C5C6C6";
+            var colorGrey1 = "#EBEDED";
 
+            var colorWhite = "#FFFFFF";
+
+            var marble = 20;
+
+            var outerRing = marble * 5;
+            var innerRing = marble * 3;
+
+
+            var pad = 10;
+            var size = 360 + 2 * pad;
+
+            var paper = Raphael(dom, size, size);
+
+            var ringsCentres = [
+                [size / 2, size / 2],
+                [pad + outerRing, pad + outerRing],
+                [size - pad - outerRing, pad + outerRing],
+                [pad + outerRing, size - pad - outerRing],
+                [size - pad - outerRing, size - pad - outerRing]
+            ];
+
+            var shift = "T0," + (outerRing + innerRing);
+
+            var positionsAct = [
+                "R-90," + ringsCentres[1][0] + "," + ringsCentres[1][1],
+                "R90," + ringsCentres[2][0] + "," + ringsCentres[2][1],
+                "R180," + ringsCentres[1][0] + "," + ringsCentres[1][1],
+                "",
+                "R180," + ringsCentres[2][0] + "," + ringsCentres[2][1],
+                "R90," + ringsCentres[1][0] + "," + ringsCentres[1][1],
+                "R-90," + ringsCentres[2][0] + "," + ringsCentres[2][1],
+                shift + "R180," + ringsCentres[3][0] + "," + ringsCentres[3][1],
+                shift,
+                shift + "R180," + ringsCentres[4][0] + "," + ringsCentres[4][1],
+                shift + "R90," + ringsCentres[3][0] + "," + ringsCentres[3][1],
+                shift + "R-90," + ringsCentres[4][0] + "," + ringsCentres[4][1]
+            ];
+
+            var attrBord = {"stroke": colorBlue4, "stroke-width": 3};
+
+
+            var marbleColors = [colorGrey3, ]
+
+            this.prepare = function (state) {
+                for (var i = 1; i < 5; i++) {
+                    paper.circle(ringsCentres[i][0], ringsCentres[i][1], innerRing).attr(
+                        {"stroke": colorBlue4, "stroke-width": 3});
+                    paper.circle(ringsCentres[i][0], ringsCentres[i][1], outerRing).attr(
+                        {"stroke": colorBlue4, "stroke-width": 3});
+                }
+                for (i = 1; i < 5; i++) {
+                    paper.circle(ringsCentres[i][0], ringsCentres[i][1], innerRing + marble).attr(
+                        {"stroke": colorGrey1, "stroke-width": marble * 2 - 3});
+                }
+
+                var dots = Raphael.pathIntersection(
+                    Raphael.format("M{0},{1}A{2},{2},0,1,1,{0},{3}",
+                        ringsCentres[1][0], pad, outerRing, pad + outerRing * 2),
+                    Raphael.format("M{0},{1}A{2},{2},0,1,0,{0},{3}",
+                        ringsCentres[2][0], pad, outerRing, pad + outerRing * 2));
+                for (i = 0; i < positionsAct.length; i++) {
+                    var hole = paper.set();
+                    hole.push(paper.path([
+                        ["M", dots[0].x, dots[0].y],
+                        ["A", outerRing, outerRing, 0, 0, 1, dots[1].x, dots[1].y],
+                        ["A", outerRing, outerRing, 0, 0, 1, dots[0].x, dots[0].y],
+                        ["Z"]]).attr(attrBord));
+                    hole.transform(positionsAct[i]);
+                }
+
+
+//                paper.path([["M", ringsCentres[1][0], pad],
+//                ["A", outerRingD / 2, outerRingD / 2, 0, 1, 1, ringsCentres[1][0] - 0.1, pad],
+//                ["z"], ["M", ringsCentres[1][0], ringsCentres[1][1] - innerRingD / 2],
+//                ["A", innerRingD / 2, innerRingD / 2, 0, 1, 1, ringsCentres[1][0] - 0.1, ringsCentres[1][1] - innerRingD / 2],
+//                ["z"]]).attr(attrRing);
+//                paper.circle(ringsCentres[1][0], ringsCentres[1][1] - innerRingD, 5);
+            }
+
+        }
 
     }
 );
