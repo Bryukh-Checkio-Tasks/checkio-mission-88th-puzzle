@@ -43,7 +43,7 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
             var fname = 'puzzle88';
 
             var checkioInput = data.in || [0, 4, 3, 1, 0, 1, 4, 2, 3, 0, 2, 0];
-            var checkioInputStr = fname + '(' + checkioInput.join(", ") + ')';
+            var checkioInputStr = fname + '((' + checkioInput.join(", ") + '))';
 
             var failError = function (dError) {
                 $content.find('.call').html('Fail: ' + checkioInputStr);
@@ -189,6 +189,9 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
                 for (i = 1; i < 5; i++) {
                     paper.circle(ringsCentres[i][0], ringsCentres[i][1], innerRing + marble).attr(
                         {"stroke": colorGrey1, "stroke-width": marble * 2 - 3});
+                    paper.text(ringsCentres[i][0], ringsCentres[i][1], i).attr(
+                        {"stroke": colorBlue4, "fill": colorBlue4,
+                            "font-family": "Roboto", "font-weight": "bold", "font-size": outerRing});
                 }
 
                 var dots = Raphael.pathIntersection(
