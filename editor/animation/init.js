@@ -8,7 +8,9 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
         });
 
         ext.set_process_in(function (this_e, data) {
+            cur_slide = {};
             cur_slide["in"] = data[0];
+            this_e.addAnimationSlide(cur_slide);
         });
 
         ext.set_process_out(function (this_e, data) {
@@ -16,8 +18,37 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
         });
 
         ext.set_process_ext(function (this_e, data) {
+            console.log(data);
+            console.log(cur_slide);
+
             cur_slide.ext = data;
-            this_e.addAnimationSlide(cur_slide);
+//            this_e.addAnimationSlide(cur_slide);
+            var userResult = cur_slide.out;
+            var result = data["result"];
+            var result_code = data["result_addon"][0];
+            var result_message = data["result_addon"][1];
+
+            var explanation = data["explanation"];
+
+            var $content = cur_slide.content;
+            $content.find('.answer').remove();
+
+            $content.find('.output').html('&nbsp;Your result:&nbsp;' + JSON.stringify(userResult));
+
+            if (!result) {
+                $content.find('.answer').html(result_message);
+                $content.find('.answer').addClass('error');
+                $content.find('.output').addClass('error');
+                $content.find('.call').addClass('error');
+            }
+            else {
+                $content.find('.answer').remove();
+            }
+
+            if (result_code >= 5) {
+                cur_slide.svg.run(userResult);
+            }
+
             cur_slide = {};
         });
 
@@ -34,6 +65,7 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
 
         ext.set_animate_slide(function (this_e, data, options) {
             var $content = $(this_e.setHtmlSlide(ext.get_template('animation'))).find('.animation-content');
+            cur_slide.content = $content;
             if (!data) {
                 console.log("data is undefined");
                 return false;
@@ -66,35 +98,13 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
                 return false;
             }
 
-            var rightResult = data.ext["answer"];
-            var userResult = data.out;
-            var result = data.ext["result"];
-            var result_code = data.ext["result_addon"][0];
-            var result_message = data.ext["result_addon"][1];
-
-
+            $content.find('.call').html('Fail: ' + checkioInputStr);
+            $content.find('.answer').html("Working...");
+            var svg = new PuzzleCanvas($content.find(".explanation")[0]);
+            svg.prepare(checkioInput);
+            data.svg = svg;
             //if you need additional info from tests (if exists)
-            var explanation = data.ext["explanation"];
 
-            $content.find('.output').html('&nbsp;Your result:&nbsp;' + JSON.stringify(userResult));
-
-            if (!result) {
-                $content.find('.call').html('Fail: ' + checkioInputStr);
-                $content.find('.answer').html(result_message);
-                $content.find('.answer').addClass('error');
-                $content.find('.output').addClass('error');
-                $content.find('.call').addClass('error');
-            }
-            else {
-                $content.find('.call').html('Pass: ' + checkioInputStr);
-                $content.find('.answer').remove();
-            }
-
-            if (result_code >= 5) {
-                var canvas = new PuzzleCanvas($content.find(".explanation")[0]);
-                canvas.prepare(checkioInput);
-                canvas.run(userResult);
-            }
 
 
             this_e.setAnimationHeight($content.height() + 60);
@@ -205,7 +215,8 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
                         ["M", dots[0].x, dots[0].y],
                         ["A", outerRing, outerRing, 0, 0, 1, dots[1].x, dots[1].y],
                         ["A", outerRing, outerRing, 0, 0, 1, dots[0].x, dots[0].y],
-                        ["Z"]]).attr(attrBord));
+                        ["Z"]
+                    ]).attr(attrBord));
                     hole.push(paper.circle(size / 2, pad + outerRing, marble).attr(
                         {"stroke": colorBlue4, "stroke-width": 2, "fill": marbleColors[state[i]]}));
                     hole.transform(positionsAct[i]);
@@ -214,7 +225,7 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
 
             };
 
-            this.run = function(actions) {
+            this.run = function (actions) {
                 var i = 0;
                 var ringsPositions = {
                     1: [0, 3, 5, 2],
@@ -235,17 +246,18 @@ requirejs(['ext_editor_1', 'jquery_190', 'raphael_210'],
                     var temp = holes[ringsPositions[act][0]];
                     for (var k = 0; k < 4; k++) {
                         wheel.push(temp);
-                        var new_temp = holes[ringsPositions[act][(k+1)%4]];
-                        holes[ringsPositions[act][(k+1)%4]] = temp;
+                        var new_temp = holes[ringsPositions[act][(k + 1) % 4]];
+                        holes[ringsPositions[act][(k + 1) % 4]] = temp;
                         temp = new_temp;
                     }
-                    setTimeout(function() {
-                        rings[act-1].toFront();
+                    setTimeout(function () {
+                        rings[act - 1].toFront();
                         wheel.animate({"transform": "...R90," + ringsCentres[act][0] + "," + ringsCentres[act][1]},
-                            1000, callback=function(){
-                                rings[act-1].toBack();
+                            1000, callback = function () {
+                                rings[act - 1].toBack();
                                 rotate();
-                            })}, 100);
+                            })
+                    }, 100);
 
                 }
 
